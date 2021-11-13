@@ -1,6 +1,8 @@
 from flask_restful import Resource, reqparse
 from datetime import datetime, timedelta
 from cluster import get_cluster_for_ecom
+from api.db import get_price
+
 import random
 import numpy as np
 import json
@@ -36,7 +38,7 @@ class Heatmap(Resource):
         for n in range(int((end_date - start_date).days)):
             date = start_date + timedelta(n)
             ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
-            prices = self.get_prices(ecom_ids_for_one_date)
+            prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
             disrib_colors, min_price, max_price = self.get_disrib_colors(prices.values()) # могло бы быть написано лучше
             
             for ecom_id in ecom_ids_for_one_date:
@@ -58,12 +60,8 @@ class Heatmap(Resource):
     def get_prices(self, ecom_ids, start_date, end_date):
         prices = {}
         for ecom_id in ecom_ids:
-            prices[ecom_id] = self.get_price(ecom_id)
+            prices[ecom_id] = get_price(ecom_id, start_date, end_date)
         return prices
-
-    #mock
-    def get_price(self, ecom_id, start_date, end_date):
-        return ecom_id + 1
     
     def get_disrib_colors(self, prices):
         max_price = max(prices)

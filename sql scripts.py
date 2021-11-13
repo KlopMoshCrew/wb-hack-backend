@@ -34,3 +34,12 @@ get_events_count_by_id_daily = """WITH myconstants (ItemID, startDate, endDate) 
         and (utc_event_date) between  startDate and  endDate
         GROUP BY utc_event_date
 	    ORDER BY utc_event_date;"""
+
+
+"""Получение стоимости товара по ID на определенную дату"""
+"""Порядок параметров: ID, дата"""
+get_price_by_id_date = """SELECT
+ecom_price100
+FROM public.items_price
+Where ecom_id = ? and utc_event_time::date = ?
+LIMIT 1"""

@@ -51,6 +51,6 @@ get_price_by_id_period = """SELECT
 min(utc_event_time::date) AS date,
 MAX(ecom_price100) AS price
 FROM items_price
-where ecom_id = %s and utc_event_time::date between %s and  %s
+where ecom_id = %s and utc_event_time::date between %s::date and  %s::date
 group by utc_event_time::date
-ORDER BY utc_event_timecte ASC"""
+ORDER BY utc_event_time::date ASC"""

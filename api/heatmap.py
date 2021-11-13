@@ -60,6 +60,7 @@ class Heatmap(Resource):
     def get_prices(self, ecom_ids, start_date, end_date):
         prices = {}
         for ecom_id in ecom_ids:
+            print(ecom_id, start_date, end_date)
             prices[ecom_id] = get_price(ecom_id, start_date, end_date)
         return prices
     
@@ -84,6 +85,8 @@ class Heatmap(Resource):
             max_price, min_price = min_price, max_price
         step = 0
         temp_price = min_price
+        print("AAAAAAA")
+        print(min_price, max_price)
         interval_step = (max_price - min_price) / 10.0
        
         while (temp_price < max_price and price>=temp_price):

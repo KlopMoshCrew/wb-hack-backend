@@ -14,7 +14,7 @@ class Heatmap(Resource):
         self.get_parser.add_argument("ecom_id", type=str, required=True, location="args")
         self.get_parser.add_argument("start_date", type=str, required=True, location="args")
         self.get_parser.add_argument("end_date", type=str, required=True, location="args")
-        self.colors = ["blue", "blue", "green", "green", "red", "red", "green", "grenn", "blue", "blue"]
+        self.colors = ["blue", "blue", "green", "green", "red", "red", "green", "green", "blue", "blue" ]
 
     def get(self):
         args = self.get_parser.parse_args()
@@ -28,7 +28,8 @@ class Heatmap(Resource):
             return {"message": "invalid params"}, 400
         
         result = self.get_heatmap(start_date, end_date, ecom_id)
-        return {"message": "ok", "heatmap": result}, 200
+        return {"heatmap": result}, 200
+
     
     def get_heatmap(self, start_date, end_date, ecom_id):
         result = []
@@ -51,8 +52,8 @@ class Heatmap(Resource):
         price = prices[ecom_id]
         return {"ecom_id": ecom_id, 
                 "price": price,
-                "date": date.strftime('%m-%d-%Y %Y-%m-%d'),
-                "color": self.get_color(price, disrib_colors, min_price, max_price)
+                "date" : date.strftime('%Y-%m-%d'),
+                "color" : self.get_color(price, disrib_colors, min_price, max_price)
                 }
    
     def get_color(self, price, disrib_colors, min_price, max_price):

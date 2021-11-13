@@ -35,20 +35,24 @@ class Heatmap(Resource):
     
     def get_heatmap(self, start_date, end_date, ecom_id):
         result = []
-        for n in range(int((end_date - start_date).days)):
+        ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
+        prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
+        print(prices)
+        for n in range(int((end_date - start_date).days + 1)):
             date = start_date + timedelta(n)
-            ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
-            prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
+            #print(prices)
             filtered_prices = self.extract_prices_for_date(prices, date)
+            print("filtered dates", filtered_prices)
+            print("date ", date)
             if len(filtered_prices) == 0:
                 continue
-            print(date)
             disrib_colors, min_price, max_price = self.get_disrib_colors(filtered_prices.values()) # могло бы быть написано лучше
             
             for ecom_id in ecom_ids_for_one_date:
                 info = self.get_info_for_ecom(date, ecom_id, filtered_prices, disrib_colors, min_price, max_price)
                 if info is not None:
                     result.append(info)
+        #print("result ", result)
         return result
 
     def extract_prices_for_date(self, raw_prices, date):
@@ -57,14 +61,13 @@ class Heatmap(Resource):
             for elem in prices_with_date:
                 if elem[0] == date.date():
                     prices[key] = elem[1]
-                break
+                    break
                     
         return prices
 
     def get_info_for_ecom(self, date, ecom_id, prices, disrib_colors, min_price, max_price):
-        if ecom_id is not prices:
+        if ecom_id not in prices:
             return None
-
         price = prices[ecom_id]
         return {"ecom_id": ecom_id, 
                 "price": price,
@@ -79,7 +82,9 @@ class Heatmap(Resource):
     def get_prices(self, ecom_ids, start_date, end_date):
         prices = {}
         for ecom_id in ecom_ids:
-            prices[ecom_id] = get_price(ecom_id, start_date, end_date)
+            price = get_price(ecom_id, start_date, end_date)
+            if len(price):
+                prices[ecom_id] = price
         return prices
     
     def get_disrib_colors(self, prices):

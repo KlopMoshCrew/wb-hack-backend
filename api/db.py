@@ -12,7 +12,6 @@ def get_price(ecom_id, start_date, end_date):
     cur.execute(get_price_by_id_period, (ecom_id, start_date, end_date))
     rows = cur.fetchall()
 
-
     cur.close()
     conn.close()
     return rows

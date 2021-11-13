@@ -1,12 +1,26 @@
-from flask import Flask
+import os
 
-app = Flask(__name__)
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
-
+from flask import Flask, current_app
+from flask_restful import Api
+from flask_cors import CORS
+from api.ecom import Ecom
 
 
+def create_app():
+    app = Flask(__name__)
 
-app.run(host='0.0.0.0', port=5000)
+    cors = CORS(app, resources={r"*": {"origins": "*"}})
+
+    # with app.app_context():
+    #     current_app.db_wrapper = DBWrapper(DATABASE, USER, PASSWORD, HOST, PORT, SCHEMA)
+
+    api = Api(app)
+    api.add_resource(Ecom, "/ecom/<string:id>")
+
+    return app
+
+
+if __name__ == "__main__":
+    app = create_app()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)

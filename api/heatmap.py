@@ -1,6 +1,9 @@
 from flask_restful import Resource, reqparse
 from datetime import datetime, timedelta
 from cluster import get_cluster_for_ecom
+import random
+import numpy as np
+import json
 #from datetime import date, timedelta
 
 
@@ -11,6 +14,7 @@ class Heatmap(Resource):
         self.get_parser.add_argument("ecom_id", type=str, required=True, location="args")
         self.get_parser.add_argument("start_date", type=str, required=True, location="args")
         self.get_parser.add_argument("end_date", type=str, required=True, location="args")
+        self.colors = ["blue", "blue", "green", "green", "red", "red", "green", "grenn", "blue", "blue" ]
 
     def get(self):
         args = self.get_parser.parse_args()
@@ -23,14 +27,99 @@ class Heatmap(Resource):
             print(str(e))
             return {"message": "invalid params"}, 400
         
-        self.get_heatmap(start_date, end_date, ecom_id)
-        return {"message": "ok"}, 200
+        result = self.get_heatmap(start_date, end_date, ecom_id)
+        return {"message": "ok", "heatmap" : json.dumps(result)}, 200
     
     def get_heatmap(self, start_date, end_date, ecom_id):
         result = []
         for n in range(int((end_date - start_date).days)):
-            result_for_one_date = get_cluster_for_ecom(start_date + timedelta(n), ecom_id)
-            result.append(result_for_one_date)
-        print(result)
-        #result = get_cluster_for_ecom(start_date, end_date, ecom_id)
+            date = start_date + timedelta(n)
+            ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
+            #result.append(result_for_one_date)
+            prices = self.get_prices(ecom_ids_for_one_date)
+            print("prices2 ", prices)
+            disrib_colors, min_price, max_price = self.get_disrib_colors(prices.values()) # могло бы быть написано лучше
+            
+            for ecom_id in ecom_ids_for_one_date:
+                result.append(self.get_info_for_ecom(date, ecom_id, prices, disrib_colors, min_price, max_price))
+        #print(result)
+        return result
+        
+        #result = self.get_cluster_for_ecom(start_date, end_date, ecom_id)
 
+    def get_info_for_ecom(self, date, ecom_id, prices, disrib_colors, min_price, max_price):
+        price = prices[ecom_id]
+        return {"ecom_id": ecom_id, 
+                "price": price,
+                "date" : date.strftime('%m-%d-%Y %Y-%m-%d'),
+                "color" : self.get_color(price, disrib_colors, min_price, max_price)
+                }
+   
+    def get_color(self, price, disrib_colors, min_price, max_price):
+        pos = self.get_position_in_interval(price, min_price, max_price)
+        #print(disrib_colors)
+        return disrib_colors[pos]
+
+    def get_prices(self, ecom_ids):
+        prices = {}
+        for ecom_id in ecom_ids:
+            prices[ecom_id] = self.get_price(ecom_id)
+        print("PRICES ", prices)
+        return prices
+
+    #mock
+    def get_price(self, ecom_id):
+        return ecom_id + 1
+    
+    def get_disrib_colors(self, prices):
+        max_price = max(prices)
+        min_price = min(prices)
+        #print("min_price2  ", min_price)
+        distrib = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        #print(prices)
+        for price in prices:
+            pos = self.get_position_in_interval(price, min_price, max_price)
+            distrib[pos] = distrib[pos]  + 1
+        
+        elements_less_or_equal = []
+        for value in prices:
+            elements_less_or_equal.append(self.count_less_or_equal_in_array(value, prices))
+        print("DISR ", distrib)
+        print("less_or_equal ", elements_less_or_equal)
+        distrib_colors = []
+        for value in elements_less_or_equal:
+            distrib_colors.append(self.value_to_color(value))
+        return distrib_colors, min_price, max_price
+
+    def get_position_in_interval(self, price, min_price, max_price):
+        if(min_price > max_price):
+            max_price, min_price = min_price, max_price
+        #print("inside max price", max_price)
+        #print("inside min price", min_price)
+        step = 0
+        temp_price = min_price
+        interval_step = (max_price - min_price) / 10.0
+       
+        while (temp_price < max_price and price>=temp_price):
+            temp_price = temp_price + interval_step
+            step = step + 1
+        if step > 9:
+            step = 9 # на случай проблем с округлением 
+        print("STEP ", step)
+        return step
+
+    def count_less_or_equal_in_array(self, value, array):
+        result = 0
+        #print(array)
+        for elem in array:
+            if elem >= value: # забиваем на эквал
+                result = result + 1
+        return result
+
+    def value_to_color(self, value):
+        if value < 0:
+            value = 0
+        if value > 9 :
+            value = 9
+
+        return self.colors[value]

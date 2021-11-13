@@ -16,7 +16,7 @@ class Heatmap(Resource):
         self.get_parser.add_argument("ecom_id", type=str, required=True, location="args")
         self.get_parser.add_argument("start_date", type=str, required=True, location="args")
         self.get_parser.add_argument("end_date", type=str, required=True, location="args")
-        self.colors = ["blue", "blue", "green", "green", "red", "red", "green", "green", "blue", "blue" ]
+        self.colors = ["blue", "blue", "purple", "purple", "green", "green", "pink", "pink", "red", "red" ]
 
     def get(self):
         args = self.get_parser.parse_args()
@@ -39,25 +39,22 @@ class Heatmap(Resource):
             date = start_date + timedelta(n)
             ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
             prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
-            print(prices)
             filtered_prices = self.extract_prices_for_date(prices, date)
             if len(filtered_prices) == 0:
                 continue
-
-            print("FFFFFF")
-            print(filtered_prices)
+            print(date)
             disrib_colors, min_price, max_price = self.get_disrib_colors(filtered_prices.values()) # могло бы быть написано лучше
             
             for ecom_id in ecom_ids_for_one_date:
-                result.append(self.get_info_for_ecom(date, ecom_id, filtered_prices, disrib_colors, min_price, max_price))
+                info = self.get_info_for_ecom(date, ecom_id, filtered_prices, disrib_colors, min_price, max_price)
+                if info is not None:
+                    result.append(info)
         return result
 
     def extract_prices_for_date(self, raw_prices, date):
         prices = {}
         for key, prices_with_date in raw_prices.items():
             for elem in prices_with_date:
-                print("zzz", type(elem[0]), type(date))
-                print(elem[0], date.date())
                 if elem[0] == date.date():
                     prices[key] = elem[1]
                 break
@@ -65,6 +62,9 @@ class Heatmap(Resource):
         return prices
 
     def get_info_for_ecom(self, date, ecom_id, prices, disrib_colors, min_price, max_price):
+        if ecom_id is not prices:
+            return None
+
         price = prices[ecom_id]
         return {"ecom_id": ecom_id, 
                 "price": price,
@@ -74,14 +74,11 @@ class Heatmap(Resource):
    
     def get_color(self, price, disrib_colors, min_price, max_price):
         pos = self.get_position_in_interval(price, min_price, max_price)
-        print("POSS", pos)
-        print(len(disrib_colors))
         return disrib_colors[pos]
 
     def get_prices(self, ecom_ids, start_date, end_date):
         prices = {}
         for ecom_id in ecom_ids:
-            print(ecom_id, start_date, end_date)
             prices[ecom_id] = get_price(ecom_id, start_date, end_date)
         return prices
     
@@ -94,11 +91,15 @@ class Heatmap(Resource):
             distrib[pos] = distrib[pos] + 1
         
         elements_less_or_equal = []
-        for value in prices:
-            elements_less_or_equal.append(self.count_less_or_equal_in_array(value, prices))
+        for value in distrib:
+            elements_less_or_equal.append(self.count_less_or_equal_in_array(value, elements_less_or_equal))
+
+        count_elements = 1.0 * len(prices)
+        # доля элементов меньше
+        
         distrib_colors = []
         for value in elements_less_or_equal:
-            distrib_colors.append(self.value_to_color(value))
+            distrib_colors.append(self.count_elements_less_value_to_color(value, count_elements))
         return distrib_colors, min_price, max_price
 
     def get_position_in_interval(self, price, min_price, max_price):
@@ -106,8 +107,6 @@ class Heatmap(Resource):
             max_price, min_price = min_price, max_price
         step = 0
         temp_price = min_price
-        print("AAAAAAA")
-        print(min_price, max_price)
         interval_step = (max_price - min_price) / 10.0
        
         while (temp_price < max_price and price>=temp_price):
@@ -124,10 +123,11 @@ class Heatmap(Resource):
                 result = result + 1
         return result
 
-    def value_to_color(self, value):
-        if value < 0:
-            value = 0
-        if value > 9 :
-            value = 9
+    def count_elements_less_value_to_color(self, count_elements_less_value, count_elements):
+        color_index = int(count_elements_less_value * 1.0 /(count_elements / 10) * 10)
+        if color_index < 0:
+            color_index = 0
+        if color_index > 9 :
+            color_index = 9
 
-        return self.colors[value]
+        return self.colors[color_index]

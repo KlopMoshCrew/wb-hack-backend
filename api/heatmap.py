@@ -29,8 +29,8 @@ class Heatmap(Resource):
             print(str(e))
             return {"message": "invalid params"}, 400
         
-        heatmap = self.get_heatmap(start_date, end_date, ecom_id)
-        return {"heatmap": heatmap}, 200
+        heatmap, min_price, max_price = self.get_heatmap(start_date, end_date, ecom_id)
+        return {"heatmap": heatmap, "max_price": max_price, "min_price" : min_price}, 200
 
     
     def get_heatmap(self, start_date, end_date, ecom_id):
@@ -38,23 +38,29 @@ class Heatmap(Resource):
         ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
         prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
         
-        print(prices)
+        #print(prices)
+        all_filtered_prices = self.extract_prices(prices)
+        min_price = min(all_filtered_prices)
+        max_price = max(all_filtered_prices)
+
         for n in range(int((end_date - start_date).days + 1)):
             date = start_date + timedelta(n)
             filtered_prices = self.extract_prices_for_date(prices, date)
-            print("filtered dates", filtered_prices)
-            print("date ", date)
+            #print("filtered dates", filtered_prices)
+            self_price = None
+            if ecom_id in filtered_prices:
+                self_price = filtered_prices[ecom_id]
 
             if len(filtered_prices) == 0:
                 continue
-            disrib_colors, min_price, max_price = self.get_disrib_colors(filtered_prices.values()) # могло бы быть написано лучше
+            disrib_colors,_,_ = self.get_disrib_colors(filtered_prices.values(), min_price, max_price) # могло бы быть написано лучше
             
             for ecom_id in ecom_ids_for_one_date:
-                info = self.get_info_for_ecom(date, ecom_id, filtered_prices, disrib_colors, min_price, max_price)
+                info = self.get_info_for_ecom(date, self_price, disrib_colors, min_price, max_price)
                 if info is not None:
                     result.append(info)
-        #print("result ", result)
-        return result
+        print("result ", result)
+        return result, min_price, max_price
 
     def extract_prices_for_date(self, raw_prices, date):
         prices = {}
@@ -66,14 +72,19 @@ class Heatmap(Resource):
                     
         return prices
 
-    def get_info_for_ecom(self, date, ecom_id, prices, disrib_colors, min_price, max_price):
-        if ecom_id not in prices:
-            return None
-        price = prices[ecom_id]
+    def extract_prices(self, raw_prices):
+        prices = []
+        for prices_with_date in raw_prices.values():
+            for elem in prices_with_date:
+                prices.append(elem[1])
+                    
+        return prices
+
+    def get_info_for_ecom(self, date, self_price, disrib_colors, min_price, max_price):
+       
         return {"date" : date.strftime('%Y-%m-%d'),
                 "color" : disrib_colors,
-                "min" : min_price,
-                "max" : max_price
+                "self_price" : self_price
                 }
    
     def get_prices(self, ecom_ids, start_date, end_date):
@@ -84,9 +95,7 @@ class Heatmap(Resource):
                 prices[ecom_id] = price
         return prices
     
-    def get_disrib_colors(self, prices):
-        max_price = max(prices)
-        min_price = min(prices)
+    def get_disrib_colors(self, prices, min_price, max_price):
         distrib = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         for price in prices:
             pos = self.get_position_in_interval(price, min_price, max_price)
@@ -94,7 +103,7 @@ class Heatmap(Resource):
         
         count_elements = 1.0 * len(prices)
         tenth = count_elements/ 10.0
-                
+
         distrib_colors = []
         for value in distrib:
             distrib_colors.append(self.get_color(value, tenth))

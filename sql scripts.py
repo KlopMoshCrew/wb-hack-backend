@@ -43,3 +43,14 @@ ecom_price100
 FROM public.items_price
 Where ecom_id = ? and utc_event_time::date = ?
 LIMIT 1"""
+
+
+"""Цена по товару за период"""
+"""ID, дата начала, дата окончания"""
+get_price_by_id_period = """SELECT
+min(utc_event_time::date) AS date,
+MAX(ecom_price100) AS price
+FROM public.items_price
+Where ecom_id = ? and utc_event_time::date between  ? and  ?
+group by utc_event_time::date
+ORDER BY utc_event_time::date ASC"""

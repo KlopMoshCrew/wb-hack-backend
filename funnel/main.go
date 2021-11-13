@@ -1,17 +1,16 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"net/http"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/sirupsen/logrus"
 )
 
 type application struct {
 	cfg config
 	log *logrus.Logger
-	db  *pgx.Conn
+	db  *sql.DB
 }
 
 func main() {
@@ -25,7 +24,7 @@ func main() {
 	if err := a.initDB(); err != nil {
 		a.log.Fatalf("init db: %v", err)
 	}
-	defer a.db.Close(context.Background())
+	defer a.db.Close()
 
 	a.log.Infof("api started on %s", a.cfg.Port)
 

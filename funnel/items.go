@@ -24,10 +24,10 @@ func (a *application) items(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if o, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil {
-		offset = o * limit
+		offset = (o - 1) * limit
 	}
 
-	rows, err := a.db.Query(r.Context(), itemsSQL, limit, offset)
+	rows, err := a.db.QueryContext(r.Context(), itemsSQL, limit, offset)
 	if err != nil {
 		a.log.Errorf("can't get rows for items: %v", err)
 		a.sendResponse(w, http.StatusInternalServerError, "can't get items")

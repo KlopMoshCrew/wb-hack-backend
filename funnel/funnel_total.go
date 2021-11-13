@@ -70,7 +70,7 @@ func (a *application) funnelTotalHandler(w http.ResponseWriter, r *http.Request)
 
 	var out responseCombo
 
-	if err := a.db.QueryRow(r.Context(), totalSQL, id, from.Format(dateLayout), to.Format(dateLayout)).Scan(
+	if err := a.db.QueryRowContext(r.Context(), totalSQL, id, from.Format(dateLayout), to.Format(dateLayout)).Scan(
 		&out.BeginCheckout,
 		&out.AddToCart,
 		&out.Purchase,

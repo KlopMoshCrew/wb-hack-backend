@@ -64,7 +64,7 @@ func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	rows, err := a.db.Query(r.Context(), seriesSQL, id, from.Format(dateLayout), to.Format(dateLayout))
+	rows, err := a.db.QueryContext(r.Context(), seriesSQL, id, from.Format(dateLayout), to.Format(dateLayout))
 	if err != nil {
 		a.log.Errorf("can't get rows for funnel series: %v", err)
 		a.sendResponse(w, http.StatusInternalServerError, "can't get funnel series")

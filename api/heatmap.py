@@ -38,7 +38,7 @@ class Heatmap(Resource):
         ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
         prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
         
-        #print(prices)
+        print(prices)
         all_filtered_prices = self.extract_prices(prices)
         min_price = min(all_filtered_prices)
         max_price = max(all_filtered_prices)
@@ -46,6 +46,7 @@ class Heatmap(Resource):
         for n in range(int((end_date - start_date).days + 1)):
             date = start_date + timedelta(n)
             filtered_prices = self.extract_prices_for_date(prices, date)
+            #print(date, filtered_prices)
             #print("filtered dates", filtered_prices)
             self_price = None
             if ecom_id in filtered_prices:

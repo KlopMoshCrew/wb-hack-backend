@@ -55,11 +55,10 @@ class Heatmap(Resource):
                 continue
             disrib_colors,_,_ = self.get_disrib_colors(filtered_prices.values(), min_price, max_price) # могло бы быть написано лучше
             
-            for ecom_id in ecom_ids_for_one_date:
-                info = self.get_info_for_ecom(date, self_price, disrib_colors, min_price, max_price)
-                if info is not None:
-                    result.append(info)
-        print("result ", result)
+            info = self.get_info_for_ecom(date, self_price, disrib_colors, min_price, max_price)
+            if info is not None:
+                result.append(info)
+        #print("result ", result)
         return result, min_price, max_price
 
     def extract_prices_for_date(self, raw_prices, date):
@@ -107,7 +106,6 @@ class Heatmap(Resource):
         distrib_colors = []
         for value in distrib:
             distrib_colors.append(self.get_color(value, tenth))
-        print(distrib_colors)
 
         return distrib_colors, min_price, max_price
 

@@ -11,7 +11,7 @@ const (
 
 type responseItem struct {
 	ID      string `json:"id"`
-	Brand   string `json:"brand"`
+	Brand   string `json:"name"`
 	Variant string `json:"variant"`
 }
 

@@ -4,6 +4,7 @@ from flask import Flask, current_app
 from flask_restful import Api
 from flask_cors import CORS
 from api.ecom import Ecom
+from api.heatmap import Heatmap
 
 
 def create_app():
@@ -16,6 +17,7 @@ def create_app():
 
     api = Api(app)
     api.add_resource(Ecom, "/ecom/<string:id>")
+    api.add_resource(Heatmap, "/get_heatmap")
 
     return app
 

@@ -39,12 +39,31 @@ class Heatmap(Resource):
             date = start_date + timedelta(n)
             ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
             prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
-            disrib_colors, min_price, max_price = self.get_disrib_colors(prices.values()) # могло бы быть написано лучше
+            print(prices)
+            filtered_prices = self.extract_prices_for_date(prices, date)
+            if len(filtered_prices) == 0:
+                continue
+
+            print("FFFFFF")
+            print(filtered_prices)
+            disrib_colors, min_price, max_price = self.get_disrib_colors(filtered_prices.values()) # могло бы быть написано лучше
             
             for ecom_id in ecom_ids_for_one_date:
-                result.append(self.get_info_for_ecom(date, ecom_id, prices, disrib_colors, min_price, max_price))
+                result.append(self.get_info_for_ecom(date, ecom_id, filtered_prices, disrib_colors, min_price, max_price))
         return result
-        
+
+    def extract_prices_for_date(self, raw_prices, date):
+        prices = {}
+        for key, prices_with_date in raw_prices.items():
+            for elem in prices_with_date:
+                print("zzz", type(elem[0]), type(date))
+                print(elem[0], date.date())
+                if elem[0] == date.date():
+                    prices[key] = elem[1]
+                break
+                    
+        return prices
+
     def get_info_for_ecom(self, date, ecom_id, prices, disrib_colors, min_price, max_price):
         price = prices[ecom_id]
         return {"ecom_id": ecom_id, 
@@ -55,6 +74,8 @@ class Heatmap(Resource):
    
     def get_color(self, price, disrib_colors, min_price, max_price):
         pos = self.get_position_in_interval(price, min_price, max_price)
+        print("POSS", pos)
+        print(len(disrib_colors))
         return disrib_colors[pos]
 
     def get_prices(self, ecom_ids, start_date, end_date):

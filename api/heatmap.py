@@ -92,17 +92,15 @@ class Heatmap(Resource):
             pos = self.get_position_in_interval(price, min_price, max_price)
             distrib[pos] = distrib[pos] + 1
         
-        elements_less_or_equal = []
-        for value in distrib:
-            elements_less_or_equal.append(self.count_less_or_equal_in_array(value, elements_less_or_equal))
-
         count_elements = 1.0 * len(prices)
+        tenth = count_elements/ 10.0
         # доля элементов меньше
         
         distrib_colors = []
-        for value in elements_less_or_equal:
-            distrib_colors.append(self.count_elements_less_value_to_color(value, count_elements))
+        for value in distrib:
+            distrib_colors.append(self.get_color(value, tenth))
         print(distrib_colors)
+
         return distrib_colors, min_price, max_price
 
     def get_position_in_interval(self, price, min_price, max_price):
@@ -119,15 +117,8 @@ class Heatmap(Resource):
             step = 9 # на случай проблем с округлением 
         return step
 
-    def count_less_or_equal_in_array(self, value, array):
-        result = 0
-        for elem in array:
-            if elem >= value: # забиваем на эквал
-                result = result + 1
-        return result
-
-    def count_elements_less_value_to_color(self, count_elements_less_value, count_elements):
-        color_index = int(count_elements_less_value * 1.0 /(count_elements / 10) * 10)
+    def get_color(self, value, tenth):
+        color_index = int( value / tenth)
         if color_index < 0:
             color_index = 0
         if color_index > 9 :

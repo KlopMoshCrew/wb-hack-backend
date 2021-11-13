@@ -94,8 +94,7 @@ class Heatmap(Resource):
         
         count_elements = 1.0 * len(prices)
         tenth = count_elements/ 10.0
-        # доля элементов меньше
-        
+                
         distrib_colors = []
         for value in distrib:
             distrib_colors.append(self.get_color(value, tenth))

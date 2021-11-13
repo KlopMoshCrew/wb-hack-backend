@@ -3,3 +3,4 @@ Flask-RESTful
 SQLAlchemy
 psycopg2
 flask-cors
+numpy

@@ -3,8 +3,6 @@ package main
 import (
 	"net/http"
 	"time"
-
-	"github.com/jackc/pgtype"
 )
 
 const (
@@ -30,11 +28,19 @@ group by
 order by 
     utc_event_date
 `
+	stackName = "stack1"
 )
 
-type responseSeries struct {
-	responseCombo
-	Date pgtype.Date `json:"date"`
+type responseSeriesV2 struct {
+	Labels  []string   `json:"labels"`
+	Dataset [6]dataset `json:"dataset"`
+}
+
+type dataset struct {
+	Stack           string `json:"stack"`
+	Label           string `json:"label"`
+	BackgroundColor string `json:"backgroundColor"`
+	Data            []int  `json:"data"`
 }
 
 func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +70,45 @@ func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	var out responseSeriesV2
+
+	for i := from; to.After(i.AddDate(0, 0, -1)); i = i.AddDate(0, 0, 1) {
+		out.Labels = append(out.Labels, i.Format(dateLayout))
+	}
+
+	out.Dataset = [6]dataset{
+		{
+			Stack:           stackName,
+			Label:           "Просмотр в поисковой выдаче",
+			BackgroundColor: "rgb(255, 0, 0)",
+		},
+		{
+			Stack:           stackName,
+			Label:           "Просмотр карточки товара",
+			BackgroundColor: "rgb(0, 255, 0)",
+		},
+		{
+			Stack:           stackName,
+			Label:           "Добавление в корзину",
+			BackgroundColor: "rgb(0, 0, 255)",
+		},
+		{
+			Stack:           stackName,
+			Label:           "Удаление из корзины",
+			BackgroundColor: "rgb(255, 255, 0)",
+		},
+		{
+			Stack:           stackName,
+			Label:           "Оформление заказа",
+			BackgroundColor: "rgb(255, 0, 255)",
+		},
+		{
+			Stack:           stackName,
+			Label:           "Выкуп",
+			BackgroundColor: "rgb(0, 255, 255)",
+		},
+	}
+
 	rows, err := a.db.QueryContext(r.Context(), seriesSQL, id, from.Format(dateLayout), to.Format(dateLayout))
 	if err != nil {
 		a.log.Errorf("can't get rows for funnel series: %v", err)
@@ -72,12 +117,13 @@ func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request
 	}
 	defer rows.Close()
 
-	var out []responseSeries
+	statMap := make(map[string]responseCombo)
 
 	for rows.Next() {
-		var tmp responseSeries
+		var tmp responseCombo
+		var date time.Time
 		if err := rows.Scan(
-			&tmp.Date,
+			&date,
 			&tmp.BeginCheckout,
 			&tmp.AddToCart,
 			&tmp.Purchase,
@@ -90,12 +136,46 @@ func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		out = append(out, tmp)
+		statMap[date.Format(dateLayout)] = tmp
 	}
 
-	if len(out) == 0 {
+	if len(statMap) == 0 {
 		a.sendResponse(w, http.StatusNotFound, "no data")
 		return
+	}
+
+	for _, label := range out.Labels {
+		stat := statMap[label]
+		if stat.ViewItemList == nil || *stat.ViewItemList == 0 {
+			out.Dataset[0].Data = append(out.Dataset[0].Data, 0)
+		} else {
+			out.Dataset[0].Data = append(out.Dataset[0].Data, *stat.ViewItemList)
+		}
+		if stat.ViewItem == nil || *stat.ViewItem == 0 {
+			out.Dataset[1].Data = append(out.Dataset[1].Data, 0)
+		} else {
+			out.Dataset[1].Data = append(out.Dataset[1].Data, *stat.ViewItem)
+		}
+		if stat.AddToCart == nil || *stat.AddToCart == 0 {
+			out.Dataset[2].Data = append(out.Dataset[2].Data, 0)
+		} else {
+			out.Dataset[2].Data = append(out.Dataset[2].Data, *stat.AddToCart)
+		}
+		if stat.RemoveFromCart == nil || *stat.RemoveFromCart == 0 {
+			out.Dataset[3].Data = append(out.Dataset[3].Data, 0)
+		} else {
+			out.Dataset[3].Data = append(out.Dataset[3].Data, *stat.RemoveFromCart)
+		}
+		if stat.BeginCheckout == nil || *stat.BeginCheckout == 0 {
+			out.Dataset[4].Data = append(out.Dataset[4].Data, 0)
+		} else {
+			out.Dataset[4].Data = append(out.Dataset[4].Data, *stat.BeginCheckout)
+		}
+		if stat.Purchase == nil || *stat.Purchase == 0 {
+			out.Dataset[5].Data = append(out.Dataset[5].Data, 0)
+		} else {
+			out.Dataset[5].Data = append(out.Dataset[5].Data, *stat.Purchase)
+		}
 	}
 
 	a.sendResponse(w, http.StatusOK, out)

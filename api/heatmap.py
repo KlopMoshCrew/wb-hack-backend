@@ -1,6 +1,6 @@
 from flask_restful import Resource, reqparse
 from datetime import datetime, timedelta
-from cluster import get_cluster_for_ecom
+from clusters.cluster import get_cluster_for_ecom
 from api.db import get_price
 
 import random
@@ -125,7 +125,7 @@ class Heatmap(Resource):
             distrib[pos] = distrib[pos] + 1
         
         count_elements = 1.0 * len(prices)
-        tenth = count_elements/ 10.0
+        tenth = count_elements / 10.0
 
         distrib_colors = []
         for value in distrib:
@@ -144,14 +144,14 @@ class Heatmap(Resource):
             temp_price = temp_price + interval_step
             step = step + 1
         if step > 9:
-            step = 9 # на случай проблем с округлением 
+            step = 9  # на случай проблем с округлением
         return step
 
     def get_color(self, value, tenth):
         color_index = int( value / tenth)
         if color_index < 0:
             color_index = 0
-        if color_index > 9 :
+        if color_index > 9:
             color_index = 9
 
         return self.colors[color_index]

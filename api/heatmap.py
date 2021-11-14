@@ -16,9 +16,9 @@ class Heatmap(Resource):
         self.get_parser.add_argument("ecom_id", type=str, required=True, location="args")
         self.get_parser.add_argument("start_date", type=str, required=True, location="args")
         self.get_parser.add_argument("end_date", type=str, required=True, location="args")
-        self.colors = ["#0000FF", "#0000FF", "#800080", "#800080", "#008000",
-                       "#008000", "#FFC0CB", "#FFC0CB", "#FF0000", "#FF0000"]
-
+        #self.colors = ["#0000FF", "#0000FF", "#800080", "#800080", "#008000",
+         #              "#008000", "#FFC0CB", "#FFC0CB", "#FF0000", "#FF0000"]
+        self.colors = [0,0,1,1,2,2,3,3,4,4]
     def get(self):
         args = self.get_parser.parse_args()
         ecom_id = args["ecom_id"]
@@ -57,7 +57,7 @@ class Heatmap(Resource):
         return new_data
 
     def get_heatmap(self, start_date, end_date, ecom_id):
-        result = []
+        result = "["
         ecom_ids_for_one_date = get_cluster_for_ecom(ecom_id)
 
         prices = self.get_prices(ecom_ids_for_one_date, start_date, end_date)
@@ -84,8 +84,11 @@ class Heatmap(Resource):
             
             info = self.get_info_for_ecom(date, self_price, disrib_colors)
             if info is not None:
-                result.append(info)
-        #print("result ", result)
+                #result.append(info)
+                result = result + info
+        result = result[:-2]
+        result = result + "]"
+        print("result ", result)
         return result, min_price, max_price
 
     def extract_prices_for_date(self, raw_prices, date):
@@ -107,10 +110,15 @@ class Heatmap(Resource):
         return prices
 
     def get_info_for_ecom(self, date, self_price, disrib_colors):
-        return {"date": date.strftime('%Y-%m-%d'),
-                "color": disrib_colors,
-                "self_price": self_price
-                }
+        res = ""
+        index = 0
+        new_line = '\n'
+
+        for color in disrib_colors:
+            res = res + f"[{date.strftime('%Y-%m-%d')},{index},{color}],{new_line}"
+            index = index +1
+        return res
+
    
     def get_prices(self, ecom_ids, start_date, end_date):
         prices = {}

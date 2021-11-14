@@ -33,7 +33,7 @@ order by
 
 type responseSeriesV2 struct {
 	Labels  []string   `json:"labels"`
-	Dataset [6]dataset `json:"dataset"`
+	Dataset [6]dataset `json:"datasets"`
 }
 
 type dataset struct {
@@ -139,10 +139,10 @@ func (a *application) funnelSeriesHandler(w http.ResponseWriter, r *http.Request
 		statMap[date.Format(dateLayout)] = tmp
 	}
 
-	if len(statMap) == 0 {
-		a.sendResponse(w, http.StatusNotFound, "no data")
-		return
-	}
+	// if len(statMap) == 0 {
+	// 	a.sendResponse(w, http.StatusNotFound, "no data")
+	// 	return
+	// }
 
 	for _, label := range out.Labels {
 		stat := statMap[label]

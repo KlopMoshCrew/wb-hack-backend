@@ -6,7 +6,9 @@ import (
 )
 
 const (
-	itemsSQL = `select id, brand, variant from ecom limit $1 offset $2`
+	itemsSQL = `SELECT ec.id, bn.name, ec.variant
+	FROM public.ecom ec
+	LEFT JOIN public.brand_names bn ON ec.brand = bn.brand limit $1 offset $2`
 )
 
 type responseItem struct {

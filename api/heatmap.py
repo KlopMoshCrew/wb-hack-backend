@@ -34,8 +34,10 @@ class Heatmap(Resource):
         return {"heatmap": heatmap, "max_price": max_price, "min_price": min_price}, 200
 
     def fill_empty_days(self, data, min_date, max_date):
-        days = [min_date + datetime.timedelta(days=x) for x in range(0, (max_date - min_date).days + 1)]
-
+        days = [min_date + timedelta(days=x) for x in range(0, (max_date - min_date).days + 1)]
+        days = [x.date() for x in days]
+        #newDays = [date() for x in days]
+        print("days ", days)
         new_data = {}
         for ecom_id in data.keys():
             items = data[ecom_id]
